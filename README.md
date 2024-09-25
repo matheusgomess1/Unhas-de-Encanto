@@ -33,6 +33,10 @@ Ao entrar no terminal de comandos utilizer esse comando:
     gcc main.c -o main && ./main
 
 
+### colaboradores:
+* @matheusgomess1
+
+
 
 
 
