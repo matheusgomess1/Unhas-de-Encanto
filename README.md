@@ -34,7 +34,7 @@ Ao entrar no terminal de comandos utilizer esse comando:
 
 
 ### colaboradores:
-* @matheusgomess1
+
 
 
 
