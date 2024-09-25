@@ -1,7 +1,7 @@
 # Unhas-de-Encanto.
 
 
-## Requisitos para o projeto:
+### Requisitos para o projeto:
 
   * Manicure básica e completa
   
@@ -31,6 +31,9 @@ Clonar o repositório: Baixe o projeto para sua máquina local usando o comando:
 Ao entrar no terminal de comandos utilizer esse comando:
 
     gcc main.c -o main && ./main
+
+
+
 
 
 
