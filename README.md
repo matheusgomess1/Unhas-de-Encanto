@@ -45,7 +45,13 @@ Ao entrar no terminal de comandos utilizer esse comando:
     gcc main.c -o main && ./main
 
 
-### colaboradores:
+## Desenvolvedores 👨‍💻👨‍💻
+
+- [Samuel Saturno](https://github.com/Samuel-Saturno)
+- [Matheus Gomes](https://github.com/matheusgomess1)
+- [Antonio Neto](https://github.com/antonioneto2)
+  
+
 
 
 
