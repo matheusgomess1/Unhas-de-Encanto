@@ -1,16 +1,109 @@
-#include "TAD.h"
-
+//#include "/home/neto/Área de trabalho/Unhas-de-Encanto/include/TAD.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-// Definição da estrutura do nó AVL
-typedef struct Horario {
+
+#define MAX_FUNCIONARIOS 10 // Máximo de funcionários
+
+// Definição de estruturas
+typedef struct funcionario {
+    char nome[50];
+    char cargo[50];
+} Funcionario;
+
+typedef struct horario {
     int diaSemana;
     int horario;
     int altura;
-    struct Horario* esquerda;
-    struct Horario* direita;
+    struct horario* esquerda;
+    struct horario* direita;
 } Horario;
+
+Horario* adicionarHorario(Horario* node, int dia, int hora); // Protótipo da função adicionarHorario
+void salvarHorarios(Horario* root, FILE* arquivo);
+void salvarFuncionarios();
+Horario* carregarHorarios(Horario* root);
+void carregarFuncionarios();
+int altura(Horario* N);
+int max(int a, int b);
+Horario* novoHorario(int dia, int hora);
+Horario* rotacaoDireita(Horario* y);
+Horario* rotacaoEsquerda(Horario* x);
+int getBalance(Horario* N);
+int verificarHorario(Horario* node, int dia, int hora);
+void mostrarHorarios(Horario* root);
+void listarServicos();
+void marcarHorario(Horario** root);
+void cadastrarFuncionario();
+void profissionaisDisponiveis();
+
+
+// Variáveis globais
+Funcionario funcionarios[MAX_FUNCIONARIOS];
+int totalFuncionarios = 0;
+
+// Função para salvar os horários agendados em um arquivo
+void salvarHorarios(Horario* root, FILE* arquivo) {
+    if (root != NULL) {
+        salvarHorarios(root->esquerda, arquivo);
+        fprintf(arquivo, "%d %d\n", root->diaSemana, root->horario); // Salva dia e horário no arquivo
+        salvarHorarios(root->direita, arquivo);
+    }
+}
+
+// Função para salvar os funcionários em um arquivo
+void salvarFuncionarios() {
+    FILE* arquivo = fopen("funcionarios.txt", "w");
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo para salvar os funcionários!\n");
+        return;
+    }
+
+    for (int i = 0; i < totalFuncionarios; i++) {
+        fprintf(arquivo, "%s %s\n", funcionarios[i].nome, funcionarios[i].cargo);
+    }
+
+    fclose(arquivo);
+    printf("Funcionários salvos com sucesso!\n");
+}
+
+// Função para carregar os horários de um arquivo para a árvore AVL
+Horario* carregarHorarios(Horario* root) {
+    FILE* arquivo = fopen("horarios.txt", "r");
+    if (arquivo == NULL) {
+        printf("Nenhum horário salvo encontrado.\n");
+        return root;
+    }
+
+    int dia, hora;
+    while (fscanf(arquivo, "%d %d", &dia, &hora) != EOF) {
+        root = adicionarHorario(root, dia, hora); // Adiciona cada horário na árvore AVL
+    }
+
+    fclose(arquivo);
+    printf("Horários carregados com sucesso!\n");
+    return root;
+}
+
+// Função para carregar os funcionários de um arquivo
+void carregarFuncionarios() {
+    FILE* arquivo = fopen("funcionarios.txt", "r");
+    if (arquivo == NULL) {
+        printf("Nenhum funcionário salvo encontrado.\n");
+        return;
+    }
+
+    totalFuncionarios = 0;
+    while (fscanf(arquivo, "%s %s", funcionarios[totalFuncionarios].nome, funcionarios[totalFuncionarios].cargo) != EOF) {
+        totalFuncionarios++;
+        if (totalFuncionarios >= MAX_FUNCIONARIOS)
+            break;
+    }
+
+    fclose(arquivo);
+    printf("Funcionários carregados com sucesso!\n");
+}
 
 // Função para obter a altura de um nó
 int altura(Horario* N) {
@@ -78,7 +171,6 @@ int getBalance(Horario* N) {
 
 // Função para inserir um novo horário na árvore AVL
 Horario* adicionarHorario(Horario* node, int dia, int hora) {
-    // Passo 1: Realizar a inserção normal de uma BST
     if (node == NULL)
         return(novoHorario(dia, hora));
 
@@ -89,45 +181,39 @@ Horario* adicionarHorario(Horario* node, int dia, int hora) {
     else // Se o horário já existir, não faz nada
         return node;
 
-    // Passo 2: Atualizar a altura deste nó ancestral
+    // Atualizar a altura deste nó ancestral
     node->altura = 1 + max(altura(node->esquerda), altura(node->direita));
 
-    // Passo 3: Obter o fator de balanceamento deste nó ancestral
+    // Obter o fator de balanceamento deste nó ancestral
     int balance = getBalance(node);
 
-    // Passo 4: Se o nó se tornar desbalanceado, há 4 casos
-
-    // Caso Esquerda-Esquerda
+    // Realizar rotações de balanceamento se necessário
     if (balance > 1 && dia < node->esquerda->diaSemana)
         return rotacaoDireita(node);
-
-    // Caso Direita-Direita
     if (balance < -1 && dia > node->direita->diaSemana)
         return rotacaoEsquerda(node);
-
-    // Caso Esquerda-Direita
     if (balance > 1 && dia > node->esquerda->diaSemana) {
         node->esquerda = rotacaoEsquerda(node->esquerda);
         return rotacaoDireita(node);
     }
-
-    // Caso Direita-Esquerda
     if (balance < -1 && dia < node->direita->diaSemana) {
         node->direita = rotacaoDireita(node->direita);
         return rotacaoEsquerda(node);
     }
 
-    // Retornar o nó (inalterado)
     return node;
 }
+
+// Restante do código principal...
+
 
 // Função para verificar colisão de horário
 int verificarHorario(Horario* node, int dia, int hora) {
     if (node == NULL)
-        return 0;  // Não há colisão
+        return 0;
 
     if (dia == node->diaSemana && hora == node->horario)
-        return 1;  // Colisão de horário
+        return 1;
 
     if (dia < node->diaSemana || (dia == node->diaSemana && hora < node->horario))
         return verificarHorario(node->esquerda, dia, hora);
@@ -135,7 +221,7 @@ int verificarHorario(Horario* node, int dia, int hora) {
     return verificarHorario(node->direita, dia, hora);
 }
 
-// Função para mostrar os horários agendados (em ordem crescente)
+// Função para mostrar os horários agendados
 void mostrarHorarios(Horario* root) {
     if (root != NULL) {
         mostrarHorarios(root->esquerda);
@@ -144,10 +230,24 @@ void mostrarHorarios(Horario* root) {
     }
 }
 
+
+// Função para listar os serviços disponíveis
+void listarServicos() {
+    printf("\n===== LISTA DE SERVIÇOS =====\n");
+    printf("1 - Manicure\n");
+    printf("2 - Pedicure\n");
+    printf("3 - Spa das Mãos\n");
+    printf("4 - Alongamento de Unhas\n");
+    printf("5 - Nail Art\n");
+    printf("6 - Voltar ao Menu\n");
+    printf("==============================\n");
+}
+
+// Função para agendar um horário
 void marcarHorario(Horario** root) {
     int horario, dia;
 
-    printf("\nVoce selecionou 'Marcar o horario'.\n");
+    printf("\nVocê selecionou 'Marcar o horário'.\n");
 
     // Solicitar o dia da semana
     printf("Insira o dia da semana (1 = Segunda-feira, ..., 7 = Domingo): ");
@@ -155,67 +255,47 @@ void marcarHorario(Horario** root) {
 
     // Validar o dia da semana
     while (dia < 1 || dia > 7) {
-        printf("Dia invalido. Insira um valor entre 1 (Segunda) e 7 (Domingo): ");
+        printf("Dia inválido. Insira um valor entre 1 (Segunda) e 7 (Domingo): ");
         scanf("%d", &dia);
     }
 
     // Solicitar o horário
-    printf("Insira o horario desejado (apenas horarios fechados ex: 14 para 14hrs): ");
+    printf("Insira o horário desejado (8 - 18 horas): ");
     scanf("%d", &horario);
 
     // Verificar se o horário é válido e se já está ocupado
     while (horario < 8 || horario > 18 || verificarHorario(*root, dia, horario)) {
         if (horario < 8 || horario > 18) {
-            printf("Horario invalido. Funcionamos das 8hrs as 18hrs.\n");
+            printf("Horário inválido. Funcionamos das 8hrs às 18hrs.\n");
         } else {
-            printf("Horario ja marcado para esse dia. Escolha outro horario.\n");
+            printf("Horário já marcado para esse dia. Escolha outro horário.\n");
         }
-
-        // Solicitar um novo horário
-        printf("Insira o horario desejado (apenas horarios fechados ex: 14 para 14hrs): ");
+        printf("Insira o horário desejado (8 - 18 horas): ");
         scanf("%d", &horario);
     }
 
-    // Se o horário estiver livre e válido, adiciona na árvore
+    // Adicionar o horário na árvore
     *root = adicionarHorario(*root, dia, horario);
-    printf("Horario marcado para %d:00 no dia %d.\n", horario, dia);
+    printf("Horário marcado para %d:00 no dia %d.\n", horario, dia);
 }
 
-void entrarServicos() {
-    int opcaoServico;
-
-    do {
-        listarServicos(); // Exibe a lista de serviços
-        printf("Selecione um serviço para mais detalhes: ");
-        scanf("%d", &opcaoServico);
-
-        switch (opcaoServico) {
-            case 1:
-                printf("Manicure: Tratamento completo para as unhas das mãos.\n");
-                break;
-            case 2:
-                printf("Pedicure: Tratamento completo para as unhas dos pés.\n");
-                break;
-            case 3:
-                printf("Spa das mãos: Tratamento de esfoliação e hidratação das mãos.\n");
-                break;
-            case 4:
-                printf("Alongamento de unhas: Técnica de alongamento com gel ou acrílico.\n");
-                break;
-            case 5:
-                printf("Nail Art: Decoração artística nas unhas.\n");
-                break;
-            case 6:
-                printf("Voltando ao menu principal...\n");
-                break;
-            default:
-                printf("Opção inválida. Tente novamente.\n");
-        }
-    } while (opcaoServico != 6); // Continua no submenu até selecionar "Voltar"
+// Função para cadastrar um novo funcionário
+void cadastrarFuncionario() {
+    if (totalFuncionarios < MAX_FUNCIONARIOS) {
+        printf("Digite o nome do novo funcionário: ");
+        scanf("%s", funcionarios[totalFuncionarios].nome);
+        printf("Digite o cargo do novo funcionário: ");
+        scanf("%s", funcionarios[totalFuncionarios].cargo);
+        totalFuncionarios++;
+        printf("Funcionário cadastrado com sucesso.\n");
+    } else {
+        printf("Número máximo de funcionários atingido.\n");
+    }
 }
 
+// Função para exibir os profissionais disponíveis
 void profissionaisDisponiveis() {
-    printf("Você selecionou 'Profissionais disponíveis'.\n");
+    printf("Profissionais disponíveis:\n");
     if (totalFuncionarios == 0) {
         printf("Nenhum funcionário cadastrado.\n");
     } else {
@@ -225,111 +305,26 @@ void profissionaisDisponiveis() {
     }
 }
 
-    if (totalFuncionarios < MAX_FUNCIONARIOS) {
-        printf("Você selecionou 'Cadastrar novo funcionário'.\n");
-        printf("Digite o nome do novo funcionário: ");
-        scanf("%s", funcionarios[totalFuncionarios].nome);
-        printf("Digite o cargo do novo funcionário: ");
-        scanf("%s", funcionarios[totalFuncionarios].cargo);
-        totalFuncionarios++;
-        printf("Funcionário cadastrado com sucesso.\n");
-    } else {
-        printf("Número máximo de funcionários atingido.\n");
-    }
-}
-
-void cadastrarFuncionario() {
-    if (totalFuncionarios < MAX_FUNCIONARIOS) {
-        printf("Você selecionou 'Cadastrar novo funcionário'.\n");
-        printf("Digite o nome do novo funcionário: ");
-        scanf("%s", funcionarios[totalFuncionarios].nome);
-        printf("Digite o cargo do novo funcionário: ");
-        scanf("%s", funcionarios[totalFuncionarios].cargo);
-        totalFuncionarios++;
-        printf("Funcionário cadastrado com sucesso.\n");
-    } else {
-        printf("Número máximo de funcionários atingido.\n");
-    }
-}
-
-void atualizarFuncionario() {
-    if (totalFuncionarios == 0) {
-        printf("Nenhum funcionário cadastrado.\n");
-        return;
-    }
-    
-    printf("Você selecionou 'Atualizar funcionário'.\n");
-    profissionaisDisponiveis(); // Exibe a lista de funcionários
-    
-    int index;
-    printf("Digite o número do funcionário que deseja atualizar: ");
-    scanf("%d", &index);
-    
-    if (index < 1 || index > totalFuncionarios) {
-        printf("Funcionário inválido.\n");
-        return;
-    }
-
-    index--; // Ajusta o índice para o array
-
-    // Exibe opções para atualização
-    int opcaoAtualizar;
-    printf("O que deseja atualizar?\n");
-    printf("1 - Nome\n");
-    printf("2 - Cargo\n");
-    printf("3 - Ambos\n");
-    printf("Escolha uma opção: ");
-    scanf("%d", &opcaoAtualizar);
-
-    switch (opcaoAtualizar) {
-        case 1:
-            printf("Digite o novo nome: ");
-            scanf("%s", funcionarios[index].nome);
-            printf("Nome atualizado com sucesso.\n");
-            break;
-        case 2:
-            printf("Digite o novo cargo: ");
-            scanf("%s", funcionarios[index].cargo);
-            printf("Cargo atualizado com sucesso.\n");
-            break;
-        case 3:
-            printf("Digite o novo nome: ");
-            scanf("%s", funcionarios[index].nome);
-            printf("Digite o novo cargo: ");
-            scanf("%s", funcionarios[index].cargo);
-            printf("Nome e cargo atualizados com sucesso.\n");
-            break;
-        default:
-            printf("Opção inválida.\n");
-    }
-}
-
-void maisInformacoes() {
-    printf("\n===== Mais informações =====\n");
-    printf("Informações sobre o sistema:\n");
-    printf("Versão: 1.0.0\n");
-    printf("Desenvolvido por: @Unhas de Encanto 2024\n");
-    printf("Contato: unhasdencanto@gmail.com\n");
-    printf("Horário de funcionamento: 8h - 18h (Segunda a Sábado)\n");
-    printf("Endereço: Rua das Flores, 123, Centro\n");
-}
-
+// Função principal
 int main() {
     Horario* arvoreHorarios = NULL;
     int opcao;
 
+    // Carrega os dados salvos anteriormente
+    carregarFuncionarios();
+    arvoreHorarios = carregarHorarios(arvoreHorarios);
+
     do {
         printf("\n===== MENU =====\n");
-        printf("1 - Marcar o horario\n");
-        printf("2 - Mostrar horarios\n");
-        printf("3 - Servicos\n");
-        printf("4 - Profissionais disponiveis\n");
-        printf("5 - Cadastrar novo funcionario\n");
-        printf("6 - Atualizar funcionario\n");
-        printf("7 - Mais informacoes\n");
-        printf("8 - Sair\n");
+        printf("1 - Marcar horário\n");
+        printf("2 - Mostrar horários\n");
+        printf("3 - Serviços\n");
+        printf("4 - Profissionais disponíveis\n");
+        printf("5 - Cadastrar novo funcionário\n");
+        printf("6 - Salvar dados\n");
+        printf("7 - Sair\n");
         printf("================\n");
-        printf("Escolha uma opcao: ");
+        printf("Escolha uma opção: ");
         scanf("%d", &opcao);
 
         switch (opcao) {
@@ -340,7 +335,7 @@ int main() {
                 mostrarHorarios(arvoreHorarios);
                 break;
             case 3:
-                entrarServicos();
+                listarServicos();
                 break;
             case 4:
                 profissionaisDisponiveis();
@@ -349,18 +344,25 @@ int main() {
                 cadastrarFuncionario();
                 break;
             case 6:
-                atualizarFuncionario();
+                {
+                    FILE* arquivoHorarios = fopen("horarios.txt", "w");
+                    if (arquivoHorarios == NULL) {
+                        printf("Erro ao abrir o arquivo para salvar os horários!\n");
+                    } else {
+                        salvarHorarios(arvoreHorarios, arquivoHorarios);
+                        fclose(arquivoHorarios);
+                        printf("Horários salvos com sucesso!\n");
+                    }
+                    salvarFuncionarios();
+                }
                 break;
             case 7:
-                maisInformacoes();
-                break;
-            case 8:
-                printf("Volte sempre <3...\n");
+                printf("Volte sempre!\n");
                 break;
             default:
-                printf("Opcao invalida, tente novamente.\n");
+                printf("Opção inválida, tente novamente.\n");
         }
-    } while (opcao != 8);
+    } while (opcao != 7);
 
     return 0;
 }
